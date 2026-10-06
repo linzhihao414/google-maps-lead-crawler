@@ -58,6 +58,29 @@ def extract_email_from_website(url):
         return ""
 
 
+def lead_score(phone, email, website, rating):
+    s = 0
+    reasons = []
+    if phone:
+        s += 40
+        reasons.append("phone")
+    if email:
+        s += 30
+        reasons.append("email")
+    if website:
+        s += 20
+        reasons.append("website")
+    # Rating bonus
+    try:
+        r = float(rating) if rating else 0
+        if r >= 4.5:
+            s += 10
+            reasons.append("high-rated")
+    except:
+        pass
+    return min(100, s), ",".join(reasons)
+
+
 async def crawl_map(page, keyword):
     url = f"https://www.google.com/maps/search/{keyword}"
     await page.goto(url, wait_until="domcontentloaded", timeout=30000)
@@ -104,6 +127,7 @@ async def crawl_map(page, keyword):
             phone = clean_phone(clean_text(data["phone"]))
             website = data["website"]
             email = extract_email_from_website(website) if EXTRACT_EMAIL and website else ""
+            score, reasons = lead_score(phone, email, website, data["rating"])
 
             results.append({
                 "keyword": keyword,
@@ -114,6 +138,8 @@ async def crawl_map(page, keyword):
                 "website": website,
                 "address": clean_text(data["address"]),
                 "rating": data["rating"],
+                "score": score,
+                "reasons": reasons,
                 "maps_url": page.url,
                 "collect_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
             })
@@ -125,6 +151,7 @@ async def crawl_map(page, keyword):
         except Exception as e:
             print(f"    Skip: {e}", flush=True)
 
+    results.sort(key=lambda x: x["score"], reverse=True)
     return results
 
 
@@ -134,16 +161,27 @@ def save_to_excel(all_data, keyword):
     ws = wb.active
     ws.title = "Leads"
 
-    headers = ["Keyword", "Business Name", "Phone", "WhatsApp", "Email",
-               "Website", "Address", "Rating", "Maps URL", "Collected At"]
+    headers = ["Score", "Keyword", "Business Name", "Phone", "WhatsApp", "Email",
+               "Website", "Address", "Rating", "Reasons", "Maps URL", "Collected At"]
     ws.append(headers)
 
     for r in all_data:
-        ws.append([r["keyword"], r["name"], r["phone"], r["whatsapp"], r["email"],
-                    r["website"], r["address"], r["rating"], r["maps_url"], r["collect_time"]])
+        ws.append([r["score"], r["keyword"], r["name"], r["phone"], r["whatsapp"], r["email"],
+                    r["website"], r["address"], r["rating"], r["reasons"], r["maps_url"], r["collect_time"]])
 
-    for i, w in enumerate([15, 35, 18, 28, 30, 35, 40, 8, 50, 18], 1):
-        ws.column_dimensions[chr(64 + i)].width = w
+    # Style
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    fill = PatternFill("solid", fgColor="4472C4")
+    for c in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=c)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = fill
+    ws.freeze_panes = "A2"
+
+    widths = [8, 15, 35, 18, 28, 30, 35, 40, 8, 20, 50, 18]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
 
     fname = OUTPUT_DIR / f"GoogleMaps_{keyword}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     wb.save(str(fname))
