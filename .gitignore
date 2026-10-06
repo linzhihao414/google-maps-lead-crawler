@@ -1,5 +1,6 @@
 .venv/
-output/
+导出结果/
 __pycache__/
 *.pyc
 test.py
+quick_test.py

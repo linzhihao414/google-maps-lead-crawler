@@ -16,7 +16,7 @@ from playwright.async_api import async_playwright
 # ============ Config ============
 KEYWORDS_FILE = Path(__file__).parent / "keywords.txt"
 MAX_RESULTS = 100
-OUTPUT_DIR = Path(__file__).parent / "output"
+OUTPUT_DIR = Path(__file__).parent / "导出结果"
 HEADLESS = False
 EXTRACT_EMAIL = True
 # ================================
