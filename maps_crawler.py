@@ -15,7 +15,7 @@ from playwright.async_api import async_playwright
 
 # ============ Config ============
 KEYWORDS_FILE = Path(__file__).parent / "keywords.txt"
-MAX_RESULTS = 100
+MAX_RESULTS = 500
 OUTPUT_DIR = Path(__file__).parent / "导出结果"
 HEADLESS = False
 EXTRACT_EMAIL = True
@@ -77,9 +77,9 @@ async def crawl_map(page, keyword):
         return []
 
     # Scroll to load more
-    for _ in range(25):
+    for _ in range(80):
         await panel.evaluate("el => el.scrollTop = el.scrollHeight")
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(1.0)
 
     links = await panel.evaluate("""
         () => [...document.querySelectorAll('div[role="feed"] a[href*="/maps/place/"]')].map(a=>a.href)
