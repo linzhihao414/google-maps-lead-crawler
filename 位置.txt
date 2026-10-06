@@ -1,0 +1,7 @@
+# 搜索位置（留空 = 全球搜索，填了 = 只搜这个地方）
+# 可以填：城市、州、国家、邮编
+# 例子：Los Angeles, CA
+# 例子：New York
+# 例子：Los Angeles County
+# 留空就不限制地区
+
